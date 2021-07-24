@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# make clean
+# make all
+# make install
+
+# Path to linuxcnc dir.
+LINUXCNC_DIR="/opt/linuxcnc"
+
+# Path to linuxcnc's rtlib. 
+LINUXCNC_RT_DIR="/opt/linuxcnc/rtlib"
+
+# Path to c project dir.
+C_PROJECT_DIR="/home/user/Desktop/AI/halcompile-ai-fann"
+rm -rf $LINUXCNC_RT_DIR/ai.so 					# Remove old files
+cp -rf $C_PROJECT_DIR/ai.so $LINUXCNC_RT_DIR	# Copy new component .so file to rtlib
+
+
+
+# Let linux know where to search for extra shared library's.
+sudo ldconfig /home/user/Desktop/AI/halcompile-ai-fann/build-ai_cpp-Desktop-Debug
+
+# Copy training input data to the libai_cpp.so dir.
+cp -rf $C_PROJECT_DIR/xor.data /home/user/Desktop/AI/halcompile-ai-fann/build-ai_cpp-Desktop-Debug
+
+cd $LINUXCNC_DIR/scripts && . ./rip-environment
+	
+	# stop hal.
+        halcmd stop
+	
+	# Load rt component:
+        halcmd loadrt threads name1=base-thread fp1=0 period1=25000 name2=servo-thread period2=1000000
+
+        halcmd loadrt ai
+        halcmd addf ai_command servo-thread
+	# halcmd addf read servo-thread
+
+        # start hal.
+        halcmd start
+
+ 	# Start hal programs to debug:
+        #halmeter
+        halshow
+	#halscope 
+	
+	# Unload rt components and clean up hal:
+	halrun -U
+
+
+
